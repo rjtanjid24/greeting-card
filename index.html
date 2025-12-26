@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>শুভেচ্ছা কার্ড জেনারেটর</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #124e66;
+            margin-bottom: 5px;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .editor-grid { grid-template-columns: 1fr; }
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .preview-box {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px dashed #cbd5e0;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: #124e66;
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            text-decoration: none; 
+            transition: 0.3s;
+        }
+        .download-btn:hover { background-color: #0d3b4d; }
+
+        .frames-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .frame-thumb {
+            width: 70px;
+            height: 70px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            object-fit: cover;
+        }
+        
+        .frame-thumb.active {
+            border-color: #124e66;
+            box-shadow: 0 0 5px rgba(18, 78, 102, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>শুভেচ্ছা কার্ড তৈরি করুন</h2>
+        <p class="subtitle">আপনার ছবি, নাম ও পদবী দিয়ে কার্ড তৈরি করতে নিচের ফর্মটি পূরণ করুন</p>
+
+        <div class="editor-grid">
+            <div class="controls">
+                <label>ছবি নির্বাচন করুন</label>
+                <input type="file" id="uploadInput" accept="image/*">
+
+                <label>ছবির সাইজ ঠিক করুন (Zoom)</label>
+                <input type="range" id="zoomSlider" min="0.5" max="3" step="0.05" value="1" disabled>
+
+                <label>আপনার নাম</label>
+                <input type="text" id="nameInput" placeholder="আপনার নাম (যেমন: তানজিদ শুভ্র)">
+
+                <label>আপনার পদবী</label>
+                <input type="text" id="designationInput" placeholder="পদবী (যেমন: রিপোর্টার)">
+
+                <label>ফ্রেম নির্বাচন করুন</label>
+                <div class="frames-container">
+                    <img src="post-6-2025.png" class="frame-thumb active" onclick="selectFrame(this)" onerror="this.style.display='none'">
+                    
+                    </div>
+            </div>
+
+            <div class="preview-box">
+                <canvas id="canvas" width="1080" height="1080"></canvas>
+                <a href="#" id="downloadLink" class="download-btn">📥ডাউনলোড করুন</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const uploadInput = document.getElementById('uploadInput');
+        const nameInput = document.getElementById('nameInput');
+        const designationInput = document.getElementById('designationInput');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const downloadLink = document.getElementById('downloadLink');
+
+        // State Variables
+        let userImage = new Image();
+        let frameImage = new Image();
+        let zoomLevel = 1;
+
+        // ==========================================
+        // কনফিগারেশন: পজিশন সেটিংস
+        // ==========================================
+        
+        // ছবির পজিশন (ডানদিকের নিচে - ফিক্স করা)
+        const circleCenterX = 760; 
+        const circleCenterY = 700; 
+
+        // টেক্সট পজিশন (নিচে বাম দিকে - আগের মতো)
+        const textLeftMargin = 50;  
+        const nameY = 920;          
+        const desigY = 970;         
+
+        // ==========================================
+        // ১. সিস্টেম লোড হওয়ার সাথে সাথেই ফ্রেম সেটআপ
+        // ==========================================
+        window.onload = function() {
+            const defaultFrame = document.querySelector('.frame-thumb.active');
+            if(defaultFrame) {
+                // ফ্রেম লোড হলে তবেই ড্র করবে
+                frameImage.onload = function() {
+                    draw();
+                };
+                // যদি ফ্রেম লোড হতে সমস্যা হয়
+                frameImage.onerror = function() {
+                    console.error("ফ্রেম লোড হয়নি। ইমেজের নাম চেক করুন।");
+                };
+                frameImage.src = defaultFrame.src;
+            }
+        };
+
+        // ==========================================
+        // ২. ইউজার ছবি আপলোড লজিক
+        // ==========================================
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    userImage.onload = () => {
+                        zoomSlider.disabled = false;
+                        zoomSlider.value = 1;
+                        zoomLevel = 1;
+                        draw();
+                    };
+                    userImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // ==========================================
+        // ৩. লাইভ আপডেট ইভেন্ট (টেক্সট ও জুম)
+        // ==========================================
+        nameInput.addEventListener('input', draw);
+        designationInput.addEventListener('input', draw);
+        zoomSlider.addEventListener('input', (e) => {
+            zoomLevel = parseFloat(e.target.value);
+            draw();
+        });
+
+        // ==========================================
+        // ৪. ফ্রেম পরিবর্তন লজিক
+        // ==========================================
+        function selectFrame(imgElement) {
+            // UI আপডেট
+            document.querySelectorAll('.frame-thumb').forEach(img => img.classList.remove('active'));
+            imgElement.classList.add('active');
+
+            // ফ্রেম সোর্স আপডেট
+            frameImage.src = imgElement.src;
+            // onload হ্যান্ডলার উপরে দেওয়াই আছে, তাই src পাল্টালে draw() কল হবে
+        }
+
+        // ==========================================
+        // ৫. মেইন ড্রয়িং ফাংশন (Draw Function)
+        // ==========================================
+        function draw() {
+            // ১. ক্যানভাস ক্লিয়ার
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // ২. ব্যবহারকারীর ছবি আঁকা
+            if (userImage.src && userImage.complete && userImage.naturalWidth !== 0) {
+                const baseScale = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
+                const finalScale = baseScale * zoomLevel;
+                
+                const imgW = userImage.width * finalScale;
+                const imgH = userImage.height * finalScale;
+
+                // সেন্টার ক্যালকুলেশন
+                const x = circleCenterX - (imgW / 2);
+                const y = circleCenterY - (imgH / 2);
+                
+                ctx.drawImage(userImage, x, y, imgW, imgH);
+            }
+
+            // ৩. ফ্রেম আঁকা (সবসময় ছবির উপরে থাকবে)
+            if (frameImage.src && frameImage.complete && frameImage.naturalWidth !== 0) {
+                ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+            }
+
+            // ৪. টেক্সট আঁকা
+            drawText();
+        }
+
+        function drawText() {
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ffffff'; // সাদা কালার
+
+            const name = nameInput.value;
+            const designation = designationInput.value;
+
+            if (name) {
+                ctx.font = 'bold 50px "Hind Siliguri", sans-serif';
+                ctx.fillText(name, textLeftMargin, nameY);
+            }
+
+            if (designation) {
+                ctx.font = '400 35px "Hind Siliguri", sans-serif';
+                ctx.fillText(designation, textLeftMargin, desigY);
+            }
+        }
+
+        // ==========================================
+        // ৬. ডাউনলোড বাটন ফিক্স (Download Handler)
+        // ==========================================
+        downloadLink.addEventListener('click', function(e) {
+            // ফাইলের নাম সেট করা
+            const inputName = nameInput.value.trim();
+            const fileName = inputName ? `card-${inputName}.png` : 'greeting-card.png';
+            
+            // ক্যানভাস থেকে ইমেজ ডাটা নেওয়া
+            // নোট: লোকাল ফাইলে 'via.placeholder.com' এর ছবি থাকলে এটা কাজ করবে না
+            // তাই আমরা শুধু লোকাল ফ্রেম ব্যবহার করছি
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                this.href = dataUrl;
+                this.download = fileName;
+            } catch (error) {
+                console.error("Download Error:", error);
+                alert("ডাউনলোডে সমস্যা হচ্ছে। দয়া করে নিশ্চিত করুন আপনি লোকাল ফাইল ব্যবহার করছেন এবং বাইরের কোনো লিংকের ছবি ফ্রেমে নেই।");
+                e.preventDefault();
+            }
+        });
+
+    </script>
+</body>
+</html>
