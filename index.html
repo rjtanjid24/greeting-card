@@ -7,17 +7,17 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&display=swap');
 
-        /* ১. পেজ লেআউট ফিক্স (No Scroll) */
+        /* ১. পেজ লেআউট ফিক্স */
         body {
             font-family: 'Hind Siliguri', sans-serif;
             background-color: #f0f2f5;
             margin: 0;
             padding: 0;
-            height: 100vh; /* পুরো স্ক্রিন হাইট */
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow-y: auto; /* ছোট স্ক্রিনে স্ক্রল হবে, বড় স্ক্রিনে ফিক্সড */
+            overflow-y: auto;
         }
 
         .container {
@@ -27,7 +27,6 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            /* কন্টেইনার যাতে স্ক্রিনের বেশি বাইরে না যায় */
             max-height: 98vh; 
             overflow: hidden;
             box-sizing: border-box;
@@ -49,16 +48,15 @@
             font-size: 13px;
         }
 
-        /* ২. গ্রিড লেআউট (Compact) */
+        /* ২. গ্রিড লেআউট */
         .editor-grid {
             display: grid;
-            grid-template-columns: 320px 1fr; /* বামে ফিক্সড ৩২০px, ডানে বাকিটা */
+            grid-template-columns: 320px 1fr;
             gap: 30px;
             height: 100%;
-            overflow: hidden; /* ভিতরের স্ক্রল বন্ধ রাখতে */
+            overflow: hidden;
         }
 
-        /* মোবাইল রেস্পন্সিভ */
         @media (max-width: 850px) {
             body { height: auto; display: block; padding: 20px 0; }
             .container { max-height: none; overflow: visible; }
@@ -68,9 +66,29 @@
 
         /* বাম পাশের কন্ট্রোলস */
         .controls {
-            overflow-y: auto; /* শুধু বাম পাশ স্ক্রল হবে যদি দরকার হয় */
+            overflow-y: auto;
             padding-right: 10px;
             max-height: 75vh;
+        }
+
+        .salami-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            text-decoration: none;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        .salami-btn:hover {
+            background-color: #218838;
         }
 
         label {
@@ -83,7 +101,7 @@
 
         input[type="text"], input[type="file"] {
             width: 100%;
-            padding: 8px; /* প্যাডিং কমানো হয়েছে */
+            padding: 8px;
             border: 1px solid #ddd;
             border-radius: 6px;
             margin-bottom: 15px;
@@ -93,11 +111,18 @@
 
         input[type=range] {
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
             cursor: pointer;
         }
+        
+        .hint-text {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 15px;
+            display: block;
+        }
 
-        /* ৩. প্রিভিউ বক্স (মেইন ফিক্স) */
+        /* ৩. প্রিভিউ বক্স */
         .preview-box {
             background: #e9ecef;
             padding: 10px;
@@ -108,25 +133,30 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%; /* গ্রিডের পুরো উচ্চতা নিবে */
-            max-height: 75vh; /* স্ক্রিনের ৭৫% এর বেশি হবে না */
+            height: 100%;
+            max-height: 75vh;
+            position: relative;
         }
 
-        /* ক্যানভাস সাইজ কন্ট্রোল (CSS দিয়ে ছোট দেখানো হবে) */
         canvas {
             max-width: 100%;
-            max-height: 60vh; /* ম্যাজিক লাইন: স্ক্রিন অনুযায়ী উচ্চতা ছোট হবে */
+            max-height: 60vh;
             width: auto;
             height: auto;
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            cursor: grab; /* ড্র্যাগ করার নির্দেশক */
+        }
+        
+        canvas:active {
+            cursor: grabbing;
         }
 
         .download-btn {
             display: block;
             width: 100%;
-            max-width: 300px; /* বাটন বেশি বড় না হওয়ার জন্য */
+            max-width: 300px;
             padding: 12px;
             background-color: #124e66;
             color: white;
@@ -156,11 +186,13 @@
             border-radius: 6px;
             cursor: pointer;
             object-fit: cover;
+            transition: 0.2s;
         }
         
         .frame-thumb.active {
             border-color: #124e66;
             box-shadow: 0 0 5px rgba(18, 78, 102, 0.5);
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -169,16 +201,26 @@
     <div class="container">
         <div>
             <h2>শুভেচ্ছা কার্ড তৈরি করুন</h2>
-            <p class="subtitle">আপনার ছবি, নাম ও পদবী দিয়ে কার্ড তৈরি করুন</p>
+            <p class="subtitle">আপনার ছবি, নাম ও পদবী দিয়ে কার্ড তৈরি করুন</p>
         </div>
 
         <div class="editor-grid">
             <div class="controls">
+                <a href="https://rjtanjid24.github.io/salami/" target="_blank" class="salami-btn">🎁 সেলামী অ্যাপ (Salami App)</a>
+
+                <label>ফ্রেম নির্বাচন করুন</label>
+                <div class="frames-container">
+                    <img src="gc_01.png" class="frame-thumb active" onclick="selectFrame(this)">
+                    <img src="gc_02.png" class="frame-thumb" onclick="selectFrame(this)">
+                    <img src="gc_03.png" class="frame-thumb" onclick="selectFrame(this)">
+                </div>
+
                 <label>ছবি নির্বাচন করুন</label>
                 <input type="file" id="uploadInput" accept="image/*">
 
                 <label>ছবির সাইজ ঠিক করুন</label>
                 <input type="range" id="zoomSlider" min="0.5" max="3" step="0.05" value="1" disabled>
+                <small class="hint-text">টিপস: ছবির ওপর মাউস বা হাত দিয়ে টেনে পজিশন ঠিক করতে পারবেন।</small>
 
                 <label>আপনার নাম লিখুন</label>
                 <input type="text" id="nameInput" placeholder="যেমন: তানজিদ শুভ্র">
@@ -186,10 +228,6 @@
                 <label>আপনার পদবী লিখুন</label>
                 <input type="text" id="designationInput" placeholder="যেমন: রিপোর্টার">
 
-                <label>ফ্রেম নির্বাচন করুন</label>
-                <div class="frames-container">
-                    <img src="gc_01.png" class="frame-thumb active" onclick="selectFrame(this)">
-                </div>
             </div>
 
             <div class="preview-box">
@@ -211,8 +249,15 @@
         let userImage = new Image();
         let frameImage = new Image();
         let zoomLevel = 1;
+        
+        // ড্র্যাগিং এর জন্য ভ্যারিয়েবলস (ছবি প্যান করার জন্য)
+        let imgOffsetX = 0;
+        let imgOffsetY = 0;
+        let isDragging = false;
+        let startDragX = 0;
+        let startDragY = 0;
 
-        // পজিশন সেটিংস (আগের ফিক্স করা)
+        // আপনার পুরোনো পজিশন সেটিংস
         const circleCenterX = 760; 
         const circleCenterY = 700; 
         const textLeftMargin = 50;  
@@ -236,6 +281,8 @@
                         zoomSlider.disabled = false;
                         zoomSlider.value = 1;
                         zoomLevel = 1;
+                        imgOffsetX = 0; // নতুন ছবিতে পজিশন রিসেট
+                        imgOffsetY = 0;
                         draw();
                     };
                     userImage.src = event.target.result;
@@ -254,22 +301,30 @@
         function selectFrame(imgElement) {
             document.querySelectorAll('.frame-thumb').forEach(img => img.classList.remove('active'));
             imgElement.classList.add('active');
+            
+            frameImage.onload = function() { draw(); };
             frameImage.src = imgElement.src;
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // ছবি রেন্ডার
             if (userImage.src && userImage.complete && userImage.naturalWidth !== 0) {
+                // ক্যানভাসের সাপেক্ষে সঠিক রেশিও (Object-fit: cover এর মতো)
                 const baseScale = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
                 const finalScale = baseScale * zoomLevel;
                 const imgW = userImage.width * finalScale;
                 const imgH = userImage.height * finalScale;
-                const x = circleCenterX - (imgW / 2);
-                const y = circleCenterY - (imgH / 2);
+                
+                // ছবিকে মাঝখানে সেট করা এবং মাউস ড্র্যাগ (Offset) হিসাব করা
+                const x = circleCenterX - (imgW / 2) + imgOffsetX;
+                const y = circleCenterY - (imgH / 2) + imgOffsetY;
+                
                 ctx.drawImage(userImage, x, y, imgW, imgH);
             }
 
+            // ফ্রেম রেন্ডার
             if (frameImage.src && frameImage.complete && frameImage.naturalWidth !== 0) {
                 ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
             }
@@ -295,12 +350,57 @@
             }
         }
 
+        // --- Drag & Pan Feature (মাউস দিয়ে ছবি সরানো) ---
+        function getCanvasMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX = e.clientX || e.touches?.[0].clientX;
+            let clientY = e.clientY || e.touches?.[0].clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startDragging(e) {
+            if (!userImage.src) return;
+            isDragging = true;
+            const pos = getCanvasMousePos(e);
+            startDragX = pos.x - imgOffsetX;
+            startDragY = pos.y - imgOffsetY;
+        }
+
+        function moveDragging(e) {
+            if (!isDragging) return;
+            e.preventDefault(); // স্ক্রলিং বন্ধ করতে
+            const pos = getCanvasMousePos(e);
+            imgOffsetX = pos.x - startDragX;
+            imgOffsetY = pos.y - startDragY;
+            draw();
+        }
+
+        function stopDragging() {
+            isDragging = false;
+        }
+
+        // মাউস ইভেন্ট
+        canvas.addEventListener('mousedown', startDragging);
+        window.addEventListener('mousemove', moveDragging);
+        window.addEventListener('mouseup', stopDragging);
+
+        // টাচ ইভেন্ট (মোবাইলের জন্য)
+        canvas.addEventListener('touchstart', startDragging, {passive: false});
+        window.addEventListener('touchmove', moveDragging, {passive: false});
+        window.addEventListener('touchend', stopDragging);
+
+        // --- Download Logic ---
         downloadLink.addEventListener('click', function(e) {
             const inputName = nameInput.value.trim();
             const fileName = inputName ? `card-${inputName}.png` : 'greeting-card.png';
             
             try {
-                const dataUrl = canvas.toDataURL('image/png');
+                const dataUrl = canvas.toDataURL('image/png', 1.0);
                 this.href = dataUrl;
                 this.download = fileName;
             } catch (error) {
@@ -311,4 +411,3 @@
     </script>
 </body>
 </html>
-
